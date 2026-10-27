@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>VATOTO</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;direction:rtl}
+header{background:linear-gradient(90deg,#e10600,#ff1a1a);padding:14px 16px;position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center}
+header h1{font-size:26px;font-weight:900;letter-spacing:1px}
+header small{font-size:11px;opacity:.9;display:block}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
+.card{background:#18181b;border-radius:14px;overflow:hidden;border:1px solid #27272a;cursor:pointer}
+.thumb{height:110px;background-size:cover;background-position:center;background-color:#222;position:relative}
+.thumb::after{content:'▶';position:absolute;bottom:6px;left:6px;background:rgba(0,0,0,.7);width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;text-align:center;line-height:26px}
+.info{padding:8px 10px}
+.info b{font-size:11px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.info span{font-size:9px;color:#a1a1aa}
+.badge-cat{margin:18px 12px 6px;font-size:12px;font-weight:800;color:#fff;background:#e10600;display:inline-block;padding:5px 12px;border-radius:20px}
+#modal{position:fixed;inset:0;background:#000;z-index:999;display:none;flex-direction:column}
+#modal.on{display:flex}
+#top{height:44px;background:#111;display:flex;justify-content:space-between;align-items:center;padding:0 10px;border-bottom:1px solid #222;flex-shrink:0}
+#top b{font-size:13px}
+#top button{background:#e10600;border:0;color:#fff;padding:6px 14px;border-radius:20px;font-weight:700;font-size:12px}
+iframe{flex:1;border:0;width:100%;height:100%;background:#000}
+#search{width:calc(100% - 20px);margin:10px;background:#18181b;border:1px solid #27272a;color:#fff;padding:11px 14px;border-radius:10px;font-size:14px}
+</style>
+</head>
+<body>
+<header><div><h1>VATOTO</h1><small>100 משחקים - בלי הורדה</small></div><div style="font-size:20px">🎮</div></header>
+<input id="search" placeholder="🔍 חפשי משחק..." oninput="filterGames()">
+<div id="root"></div>
+<div id="modal"><div id="top"><b id="mtitle"></b><button onclick="closeM()">✕ סגור</button></div><iframe id="frame" allow="autoplay; fullscreen; gamepad; accelerometer; gyroscope" allowfullscreen></iframe></div>
+<script>
+const GAMES=[
+{t:"Obby - פארקור מטורף",c:"פופולריים",img:"https://img.crazygames.com/obby-parkour_16x9/20240528093018/obby-parkour_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/obby-parkour"},
+{t:"BuildNow GG",c:"יריות",img:"https://img.crazygames.com/buildnow-gg_16x9/20240326085811/buildnow-gg_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/buildnow-gg"},
+{t:"Moto X3M",c:"מירוץ",img:"https://img.crazygames.com/moto-x3m_16x9/20250107084444/moto-x3m_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/moto-x3m"},
+{t:"Shell Shockers",c:"יריות",img:"https://img.crazygames.com/shell-shockers_16x9/20241217085627/shell-shockers_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/shell-shockers"},
+{t:"Paper.io 2",c:"IO",img:"https://img.crazygames.com/paper-io-2_16x9/20240521090442/paper-io-2_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/paper-io-2"},
+{t:"Krunker",c:"יריות",img:"https://img.crazygames.com/krunker_16x9/20250107090458/krunker_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/krunker"},
+{t:"Stumble Guys",c:"אקשן",img:"https://img.crazygames.com/stumble-guys_16x9/20250108090112/stumble-guys_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/stumble-guys"},
+{t:"Football Legends",c:"ספורט",img:"https://img.crazygames.com/football-legends_16x9/20240426085722/football-legends_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/football-legends"},
+{t:"Bullet Force",c:"יריות",img:"https://img.crazygames.com/bullet-force_16x9/20240819084133/bullet-force_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/bullet-force"},
+{t:"Demolition Derby",c:"מירוץ",img:"https://img.crazygames.com/demolition-derby-crash-racing_16x9/20240801082759/demolition-derby-crash-racing_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/demolition-derby-crash-racing"},
+{t:"Hole.io",c:"IO",img:"https://img.crazygames.com/hole-io_16x9/20240313090442/hole-io_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/hole-io"},
+{t:"MiniRoyale 2",c:"יריות",img:"https://img.crazygames.com/miniroyale-2_16x9/20250108090112/miniroyale-2_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/miniroyale-2"},
+{t:"Slope",c:"אקשן",img:"https://img.crazygames.com/slope_16x9/20240521090442/slope_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/slope"},
+{t:"Blocky Cars",c:"מירוץ",img:"https://img.crazygames.com/blocky-cars_16x9/20240426085722/blocky-cars_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/blocky-cars"},
+{t:"Zombs Royale",c:"יריות",img:"https://img.crazygames.com/zombs-royale_16x9/20240104085435/zombs-royale_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/zombs-royale"},
+{t:"Basket Random",c:"ספורט",img:"https://img.crazygames.com/basket-random_16x9/20240528093018/basket-random_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/basket-random"},
+{t:"Ev.io",c:"יריות",img:"https://img.crazygames.com/ev-io_16x9/20240521090442/ev-io_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/ev-io"},
+{t:"Smash Karts",c:"מירוץ",img:"https://img.crazygames.com/smash-karts_16x9/20250107084444/smash-karts_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/smash-karts"},
+{t:"Surviv.io",c:"יריות",img:"https://img.crazygames.com/surviv-io_16x9/20240326085811/surviv-io_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/surviv-io"},
+{t:"Moto X3M Pool",c:"מירוץ",img:"https://img.crazygames.com/moto-x3m-pool-party_16x9/20240528093018/moto-x3m-pool-party_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/moto-x3m-pool-party"},
+{t:"Worms Zone",c:"IO",img:"https://img.crazygames.com/worms-zone_16x9/20240521090442/worms-zone_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/worms-zone"},
+{t:"Rooftop Snipers",c:"יריות",img:"https://img.crazygames.com/rooftop-snipers_16x9/20240521090442/rooftop-snipers_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/rooftop-snipers"},
+{t:"Drift Hunters",c:"מירוץ",img:"https://img.crazygames.com/drift-hunters_16x9/20240801082759/drift-hunters_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/drift-hunters"},
+{t:"Agar.io",c:"IO",img:"https://img.crazygames.com/agar-io_16x9/20240521090442/agar-io_16x9-cover?auto=format,compress&q=75",url:"https://www.crazygames.com/embed/agar-io"}
+];
+function render(list){
+  let cats={};
+  list.forEach((g,i)=>{ (cats[g.c]=cats[g.c]||[]).push({...g,idx:i}) });
+  let html="";
+  Object.keys(cats).forEach(cat=>{
+    html+=`<div class="badge-cat">${cat}</div><div class="grid">`;
+    cats[cat].forEach(g=>{
+      html+=`<div class="card" onclick="openM(${g.idx})"><div class="thumb" style="background-image:url('${g.img}')"></div><div class="info"><b>${g.t}</b><span>${g.c} • שחקי עכשיו</span></div></div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('root').innerHTML=html;
+}
+function openM(i){
+  document.getElementById('mtitle').innerText=GAMES[i].t;
+  document.getElementById('frame').src=GAMES[i].url;
+  document.getElementById('modal').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeM(){
+  document.getElementById('modal').classList.remove('on');
+  document.getElementById('frame').src='';
+  document.body.style.overflow='';
+}
+function filterGames(){
+  let q=document.getElementById('search').value.toLowerCase();
+  if(!q) render(GAMES);
+  else render(GAMES.filter(g=>g.t.toLowerCase().includes(q) || g.c.toLowerCase().includes(q)));
+}
+render(GAMES);
+</script>
+</body>
+</html>
